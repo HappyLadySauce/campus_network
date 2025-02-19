@@ -3,9 +3,10 @@ import os
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                               QHBoxLayout, QTabWidget, QPushButton, QLabel, 
                               QLineEdit, QCheckBox, QMessageBox, QGroupBox,
-                              QTextEdit, QSplitter, QFrame, QMenu, QTextBrowser)
+                              QTextEdit, QSplitter, QFrame, QMenu, QTextBrowser,
+                              QDialog)
 from PySide6.QtCore import Qt, Signal, QObject
-from PySide6.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter, QIcon
+from PySide6.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter, QIcon, QPixmap
 from datetime import datetime
 
 from ..core.login import CampusNetworkLogin
@@ -53,6 +54,94 @@ class LogHighlighter(QSyntaxHighlighter):
         if "Data:" in text or "Body:" in text:
             format.setForeground(QColor(self.colors['data' if self.log_type == 'request' else 'body']))
             self.setFormat(text.index("Data:" if "Data:" in text else "Body:"), len(text), format)
+
+class SponsorDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("赞助支持")
+        self.setMinimumWidth(500)
+        
+        layout = QVBoxLayout(self)
+        
+        # 添加说明文本
+        desc_label = QLabel("如果这个项目对你有帮助，欢迎赞助支持作者继续开发维护！")
+        desc_label.setWordWrap(True)
+        desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        desc_label.setStyleSheet("font-size: 14px; color: #666; padding: 10px;")
+        layout.addWidget(desc_label)
+        
+        # 赞赏码布局
+        sponsor_layout = QHBoxLayout()
+        sponsor_layout.setSpacing(20)
+        
+        # 微信赞赏码
+        wechat_group = QGroupBox("微信赞赏")
+        wechat_layout = QVBoxLayout()
+        wechat_qr = QLabel()
+        wechat_qr_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
+                                     "resources", "wechat_sponsor.png")
+        if os.path.exists(wechat_qr_path):
+            wechat_pixmap = QPixmap(wechat_qr_path)
+            wechat_pixmap = wechat_pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio, 
+                                                Qt.TransformationMode.SmoothTransformation)
+            wechat_qr.setPixmap(wechat_pixmap)
+            wechat_qr.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        else:
+            wechat_qr.setText("赞赏码加载失败")
+        wechat_layout.addWidget(wechat_qr)
+        wechat_group.setLayout(wechat_layout)
+        sponsor_layout.addWidget(wechat_group)
+        
+        # 支付宝赞赏码
+        alipay_group = QGroupBox("支付宝赞赏")
+        alipay_layout = QVBoxLayout()
+        alipay_qr = QLabel()
+        alipay_qr_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
+                                     "resources", "alipay_sponsor.png")
+        if os.path.exists(alipay_qr_path):
+            alipay_pixmap = QPixmap(alipay_qr_path)
+            alipay_pixmap = alipay_pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio, 
+                                                Qt.TransformationMode.SmoothTransformation)
+            alipay_qr.setPixmap(alipay_pixmap)
+            alipay_qr.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        else:
+            alipay_qr.setText("赞赏码加载失败")
+        alipay_layout.addWidget(alipay_qr)
+        alipay_group.setLayout(alipay_layout)
+        sponsor_layout.addWidget(alipay_group)
+        
+        # 设置赞助码组件的样式
+        for group in [wechat_group, alipay_group]:
+            group.setStyleSheet("""
+                QGroupBox {
+                    background-color: white;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    margin-top: 16px;
+                    padding: 16px;
+                }
+                QGroupBox::title {
+                    subcontrol-origin: margin;
+                    left: 8px;
+                    padding: 0 5px;
+                    color: #666;
+                    font-weight: bold;
+                }
+            """)
+        
+        layout.addLayout(sponsor_layout)
+        
+        # 添加感谢文本
+        thanks_label = QLabel("感谢所有赞助支持的朋友！")
+        thanks_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        thanks_label.setStyleSheet("""
+            QLabel {
+                color: #666;
+                font-size: 14px;
+                padding: 10px;
+            }
+        """)
+        layout.addWidget(thanks_label)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -407,21 +496,20 @@ class MainWindow(QMainWindow):
         # 关于视图
         self.about_widget = QWidget()
         about_layout = QVBoxLayout(self.about_widget)
-        about_layout.setContentsMargins(0, 0, 0, 0)
-        about_layout.setSpacing(0)
+        about_layout.setContentsMargins(0, 0, 0, 0)  # 移除所有边距
+        about_layout.setSpacing(0)  # 移除间距
 
         # 创建水平分割器
         about_splitter = QSplitter(Qt.Orientation.Horizontal)
-        about_splitter.setContentsMargins(0, 0, 0, 0)
 
         # 左侧：程序信息卡片
         about_program_group = QGroupBox("关于程序")
         about_program_layout = QVBoxLayout()
-        about_program_layout.setContentsMargins(10, 15, 10, 10)
+        about_program_layout.setContentsMargins(10, 10, 10, 10)  # 减小顶部边距
 
         about_text = QTextBrowser()
         about_text.setOpenExternalLinks(True)
-        about_text.setMinimumHeight(500)  # 设置最小高度
+        about_text.setMinimumHeight(600)  # 增加最小高度
         about_text.setStyleSheet("""
             QTextBrowser {
                 background-color: #1e1e1e;
@@ -463,33 +551,18 @@ class MainWindow(QMainWindow):
             <li>如遇问题请查看日志</li>
         </ul>
         """
-
         about_text.setHtml(about_info)
         about_program_layout.addWidget(about_text)
         about_program_group.setLayout(about_program_layout)
-        about_program_group.setStyleSheet("""
-            QGroupBox {
-                border: 1px solid #333;
-                border-radius: 4px;
-                margin-top: 0px;
-                padding-top: 5px;  /* 减小顶部内边距 */
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-        """)
-        about_splitter.addWidget(about_program_group)
 
         # 右侧：作者信息卡片
         author_group = QGroupBox("作者信息")
         author_layout = QVBoxLayout()
-        author_layout.setContentsMargins(10, 15, 10, 10)
+        author_layout.setContentsMargins(10, 10, 10, 10)  # 减小顶部边距
 
         author_text = QTextBrowser()
         author_text.setOpenExternalLinks(True)
-        author_text.setMinimumHeight(500)  # 设置最小高度
+        author_text.setMinimumHeight(600)  # 增加最小高度
         author_text.setStyleSheet("""
             QTextBrowser {
                 background-color: #1e1e1e;
@@ -512,51 +585,57 @@ class MainWindow(QMainWindow):
         <h3>作者信息</h3>
         <p><b>作者：</b> HappyLadySauce</p>
         <p><b>个人网站：</b> <a href="https://www.happyladysauce.cn">博客网站</a></p>
-        <p><b>联系方式：</b> admin@happyladysauce.cn</p>
+        <p><b>CSDN博客：</b> <a href="https://blog.csdn.net/m0_73928695">CSDN主页</a></p>
+        
+        <p><b>联系方式：</b></p>
+        <ul>
+            <li>邮箱：13452552349@163.com</li>
+            <li>微信号：A552089234</li>
+            <li>QQ号：1552089234</li>
+        </ul>
 
         <p><b>项目相关：</b></p>
         <ul>
             <li>开源协议：MIT</li>
             <li>项目地址：<a href="https://github.com/happyladysauce/campus_network">GitHub</a></li>
         </ul>
-
-        <p><b>特别感谢：</b></p>
-        <ul>
-            <li>重庆工程职业技术学院</li>
-            <li>所有项目贡献者</li>
-        </ul>
-
-        <p><b>关注我：</b></p>
-        <ul>
-            <li><a href="https://www.happyladysauce.cn">个人博客</a></li>
-            <li><a href="https://github.com/happyladysauce">GitHub</a></li>
-        </ul>
         """
-
         author_text.setHtml(author_info)
         author_layout.addWidget(author_text)
-        author_group.setLayout(author_layout)
-        author_group.setStyleSheet("""
-            QGroupBox {
-                border: 1px solid #333;
+
+        # 添加赞赏按钮
+        sponsor_btn = QPushButton("赞助支持")
+        sponsor_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0d6efd;
+                color: white;
+                border: none;
+                padding: 8px 16px;
                 border-radius: 4px;
-                margin-top: 0px;
-                padding-top: 5px;  /* 减小顶部内边距 */
+                font-weight: bold;
+                min-height: 36px;
             }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
+            QPushButton:hover {
+                background-color: #0b5ed7;
+            }
+            QPushButton:pressed {
+                background-color: #0a58ca;
             }
         """)
+        sponsor_btn.clicked.connect(self.show_sponsor_dialog)
+        author_layout.addWidget(sponsor_btn)
+
+        author_group.setLayout(author_layout)
+
+        # 添加两个组到分割器
+        about_splitter.addWidget(about_program_group)
         about_splitter.addWidget(author_group)
+
+        # 设置分割器的初始大小比例（60:40）
+        about_splitter.setSizes([int(self.width() * 0.6), int(self.width() * 0.4)])
 
         # 分割器样式
         about_splitter.setStyleSheet("""
-            QSplitter {
-                background-color: transparent;
-                padding: 0px;
-            }
             QSplitter::handle {
                 background-color: #333;
                 width: 2px;
@@ -569,9 +648,6 @@ class MainWindow(QMainWindow):
                 background-color: #0d6efd;
             }
         """)
-
-        # 设置分割器的初始大小比例（60:40）
-        about_splitter.setSizes([int(self.width() * 0.6), int(self.width() * 0.4)])
 
         # 将分割器添加到布局
         about_layout.addWidget(about_splitter)
@@ -805,3 +881,7 @@ class MainWindow(QMainWindow):
         print(f"自动登录状态改变: {state == Qt.CheckState.Checked.value}")
         # 立即更新配置（可选）
         self.login_client.config['Network']['auto_login'] = str(state == Qt.CheckState.Checked.value).lower() 
+
+    def show_sponsor_dialog(self):
+        dialog = SponsorDialog(self)
+        dialog.exec() 
