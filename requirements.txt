@@ -1,0 +1,20 @@
+# GUI 框架
+PySide6==6.8.2.1
+
+# Windows API 支持
+pywin32==306
+
+# 网络请求
+requests==2.31.0
+
+# 系统监控
+psutil==5.9.5
+
+# 打包工具
+pyinstaller==6.1.0
+
+# 其他依赖
+certifi>=2023.7.22
+charset-normalizer>=3.3.2
+idna>=3.4
+urllib3>=2.0.7 
